@@ -2,7 +2,7 @@ import torch
 from torch.nn import Linear
 from torch_geometric.nn.conv import MessagePassing
 from torch_geometric.nn.models import MLP
-from torch_scatter import scatter_add
+from torch_scatter import scatter
 
 
 class DNAConv(MessagePassing):
@@ -51,6 +51,6 @@ class DNAConv(MessagePassing):
 
     def aggregate(self, inputs, index, ptr=None, dim_size=None):
         outs = self.lin_aggr(inputs)
-        out = scatter_add(outs, index, dim=0, dim_size=dim_size)
+        out = scatter(outs, index, dim=0, dim_size=dim_size, reduce='sum')
 
         return out
