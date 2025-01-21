@@ -14,7 +14,7 @@ from models import DNAConv
 class DNA(nn.Module):
     def __init__(self, *,
                  channel_list=None, in_channels=None, hidden_channels=None, out_channels=None, num_layers=None,
-                 edge_dim=None, num_pre_layers=1, num_post_layers=1, num_pred_heads=None, num_pred_layers=1,
+                 edge_dim=None, num_pre_layers=1, num_post_layers=1, num_pred_heads=None, num_pred_layers=3,
                  readout=None, dropout=0.0, batch_norm=True, act='relu', act_first=False, act_kwargs=None,
                  residual=False, **kwargs):
         super(DNA, self).__init__()
@@ -62,8 +62,9 @@ class DNA(nn.Module):
             if num_pre_layers > out_channels:
                 raise ValueError(f"Number of output channels ({out_channels}) must be "
                                  f"greater than the number of prediction heads ({num_pred_heads})")
-            num_pred_layers = min(num_pred_layers, math.ceil(math.log2(out_channels / num_pred_heads)))
-            pred_channel_list = [out_channels // (2 ** l) for l in range(num_pred_layers)] + [num_pred_heads]
+            num_proj_layers = min(num_pred_layers, math.ceil(math.log2(out_channels / num_pred_heads)))
+            pred_channel_list = [out_channels // (2 ** l) for l in range(num_proj_layers)] \
+                                + [num_pred_heads] * (num_pred_layers - num_proj_layers + 1)
             self.pred_nn = MLP(channel_list=pred_channel_list)
 
         self.reset_parameters()
