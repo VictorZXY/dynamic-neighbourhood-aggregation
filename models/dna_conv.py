@@ -14,8 +14,7 @@ class DNAConv(MessagePassing):
         self.edge_dim = edge_dim
 
         if edge_dim is not None:
-            self.edge_decoder = Linear(edge_dim, in_channels)
-            self.pre_nn = MLP(in_channels=3 * in_channels, hidden_channels=in_channels,
+            self.pre_nn = MLP(in_channels=2 * in_channels + edge_dim, hidden_channels=in_channels,
                               out_channels=in_channels, num_layers=num_pre_layers)
         else:
             self.pre_nn = MLP(in_channels=2 * in_channels, hidden_channels=in_channels,
@@ -29,8 +28,6 @@ class DNAConv(MessagePassing):
 
     def reset_parameters(self):
         super().reset_parameters()
-        if self.edge_dim is not None:
-            self.edge_decoder.reset_parameters()
         self.pre_nn.reset_parameters()
         self.lin_aggr.reset_parameters()
         self.post_nn.reset_parameters()
@@ -42,7 +39,6 @@ class DNAConv(MessagePassing):
 
     def message(self, x_i, x_j, edge_attr=None):
         if edge_attr is not None:
-            edge_attr = self.edge_decoder(edge_attr)
             h = torch.cat([x_i, x_j, edge_attr], dim=-1)
         else:
             h = torch.cat([x_i, x_j], dim=-1)
