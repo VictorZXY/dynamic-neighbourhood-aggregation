@@ -14,9 +14,9 @@ from models import DNAConv
 class DNA(nn.Module):
     def __init__(self, *,
                  channel_list=None, in_channels=None, hidden_channels=None, out_channels=None, num_layers=None,
-                 edge_dim=None, num_pre_layers=1, num_post_layers=1, num_pred_heads=None, num_pred_layers=3,
-                 readout=None, dropout=0.0, batch_norm=True, act='relu', act_first=False, act_kwargs=None,
-                 residual=False, **kwargs):
+                 edge_dim=None, node_encoder=None, edge_encoder=None, num_pre_layers=1, num_post_layers=1,
+                 num_pred_heads=None, num_pred_layers=3, readout=None, dropout=0.0, batch_norm=True,
+                 act='relu', act_first=False, act_kwargs=None, residual=False, **kwargs):
         super(DNA, self).__init__()
 
         if in_channels is not None:
@@ -31,16 +31,8 @@ class DNA(nn.Module):
         assert len(channel_list) >= 2
         self.channel_list = channel_list
 
-        self.act = activation_resolver(act, **(act_kwargs or {}))
-        self.act_first = act_first
-        self.residual = residual
-
-        if isinstance(dropout, float):
-            dropout = [dropout] * (len(channel_list) - 1)
-        if len(dropout) != len(channel_list) - 1:
-            raise ValueError(f"Number of dropout values provided ({len(dropout)}) does not "
-                             f"match the number of layers specified ({len(channel_list) - 1})")
-        self.dropout = dropout
+        self.node_encoder = node_encoder
+        self.edge_encoder = edge_encoder
 
         self.convs = nn.ModuleList()
         self.batch_norms = nn.ModuleList()
@@ -51,6 +43,17 @@ class DNA(nn.Module):
                 self.batch_norms.append(BatchNorm(out_channels))
             else:
                 self.batch_norms.append(None)
+
+        self.act = activation_resolver(act, **(act_kwargs or {}))
+        self.act_first = act_first
+        self.residual = residual
+
+        if isinstance(dropout, float):
+            dropout = [dropout] * (len(channel_list) - 1)
+        if len(dropout) != len(channel_list) - 1:
+            raise ValueError(f"Number of dropout values provided ({len(dropout)}) does not "
+                             f"match the number of layers specified ({len(channel_list) - 1})")
+        self.dropout = dropout
 
         self.readout = readout
         if readout == 'gru':
@@ -81,6 +84,11 @@ class DNA(nn.Module):
             self.pred_nn.reset_parameters()
 
     def forward(self, x, edge_index, edge_attr, batch):
+        if self.node_encoder is not None:
+            x = self.node_encoder(x)
+        if self.edge_encoder is not None:
+            edge_attr = self.edge_encoder(edge_attr)
+
         for conv, batch_norm, dropout in zip(self.convs, self.batch_norms, self.dropout):
             h = conv(x, edge_index=edge_index, edge_attr=edge_attr)
 
