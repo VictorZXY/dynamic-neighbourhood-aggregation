@@ -10,7 +10,7 @@ from configargparse import YAMLConfigFileParser
 from torch_geometric.loader import DataLoader
 from torch_geometric.nn.resolver import optimizer_resolver, lr_scheduler_resolver
 
-from utils import Logger, dataset_resolver, evaluator_resolver, loss_resolver, model_resolver
+from utils import Logger, evaluator_resolver, loss_resolver, model_and_data_resolver
 
 
 @torch.no_grad()
@@ -27,7 +27,8 @@ def evaluate(model, loader, evaluator, loss_fn, device):
         y_true.append(data.y)
         y_pred.append(out)
         if loss_fn is not None:
-            loss = loss_fn(out, data.y)
+            is_labelled = (data.y == data.y)
+            loss = loss_fn(out[is_labelled], data.y[is_labelled].float())
             total_loss += loss.detach().item()
 
     result_dict = evaluator.eval({
@@ -69,7 +70,8 @@ def train(model, train_loader, val_loader, test_loader, train_args, device):
             for data in train_loader:
                 data = data.to(device)
                 out = model(data.x, data.edge_index, data.edge_attr, data.batch)
-                loss = loss_fn(out, data.y)
+                is_labelled = (data.y == data.y)
+                loss = loss_fn(out[is_labelled], data.y[is_labelled].float())
                 loss.backward()
                 optimizer.step()
                 total_loss += loss.detach().item()
@@ -88,7 +90,7 @@ def train(model, train_loader, val_loader, test_loader, train_args, device):
                       f"Train {eval_metric}: {train_result_dict[eval_metric]:.4f}, "
                       f"Val {eval_metric}: {val_result_dict[eval_metric]:.4f}")
 
-            scheduler.step()
+                scheduler.step(val_result_dict[eval_metric])
 
         end_time = time.time()
         run_times.append(end_time - start_time)
@@ -104,18 +106,23 @@ def main(args):
         device = torch.device('cpu')
     print(f"Device: {device}")
 
-    train_data, val_data, test_data = dataset_resolver(args.dataset, root=args.root, **(args.data_args or {}))
-    train_loader = DataLoader(train_data, batch_size=args.batch_size, shuffle=True)
-    val_loader = DataLoader(val_data, batch_size=args.batch_size, shuffle=False)
-    test_loader = DataLoader(test_data, batch_size=args.batch_size, shuffle=False)
+    model, train_loader, val_loader, test_loader = model_and_data_resolver(
+        args.model, args.dataset, model_args=(args.model_args or {}), data_args=(args.data_args or {})
+    )
     print(f"Dataset name: {args.dataset}")
-
-    model = model_resolver(args.model, args.dataset, train_data, **(args.model_args or {}))
     print(f"Model name: {args.model}")
 
     model, logger, run_times = train(model, train_loader, val_loader, test_loader, args.train_args, device)
     print(f"Finished Training {args.model} on {args.dataset} dataset")
     logger.print_statistics()
+    avg_run_time = sum(run_times) / len(run_times)
+    if avg_run_time >= 3600:
+        print(f"Average run time: {(avg_run_time / 3600):.3f} hours")
+    elif avg_run_time >= 60:
+        print(f"Average run time: {(avg_run_time / 60):.3f} minutes")
+    else:
+        print(f"Average run time: {avg_run_time:.3f} seconds")
+
     if args.checkpoint_dir is not None:
         torch.save(model.state_dict(), os.path.join(args.checkpoint_dir, f'{args.experiment_name}.pt'))
     if args.log_dir is not None:
@@ -134,8 +141,6 @@ if __name__ == '__main__':
 
     # Dataset specific arguments/hyperparameters
     parser.add_argument('--dataset', default='ogbg-molpcba', type=str)
-    parser.add_argument('--root', default='data/', type=str)
-    parser.add_argument('--batch_size', default=128, type=int)
     parser.add_argument('--data_args', default=None, type=yaml.safe_load)
 
     # Training specific arguments/hyperparameters
