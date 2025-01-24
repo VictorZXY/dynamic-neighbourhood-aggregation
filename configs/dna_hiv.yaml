@@ -1,4 +1,4 @@
-experiment_name: dna_pcba
+experiment_name: dna_hiv
 
 # Model specific arguments/hyperparameters
 model: DNA
@@ -14,7 +14,7 @@ model_args:
   readout: gru
 
 # Dataset specific arguments/hyperparameters
-dataset: ogbg-molpcba
+dataset: ogbg-molhiv
 data_args:
   root: data/
   task_type: graph classification
@@ -37,6 +37,6 @@ train_args:
     mode: max
   evaluator: OGBGraphPropPredEvaluator
   evaluator_kwargs:
-    name: ogbg-molpcba
+    name: ogbg-molhiv
 checkpoint_dir: out/checkpoints/
 log_dir: out/logs/
