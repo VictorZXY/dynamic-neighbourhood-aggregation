@@ -11,7 +11,7 @@ model_args:
   num_pred_layers: 3
   dropout: 0.3
   residual: False
-  readout: gru
+  readout: mean
 
 # Dataset specific arguments/hyperparameters
 dataset: ogbg-molpcba
