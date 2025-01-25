@@ -20,15 +20,15 @@ def evaluate(model, loader, evaluator, loss_fn, device):
     y_true = []
     y_pred = []
     total_loss = 0
-    for data in loader:
-        data = data.to(device)
-        out = model(data.x, data.edge_index, data.edge_attr, data.batch)
+    for batch in loader:
+        batch = batch.to(device)
+        out = model(batch.x, batch.edge_index, batch.edge_attr, batch.batch)
 
-        y_true.append(data.y)
+        y_true.append(batch.y)
         y_pred.append(out)
         if loss_fn is not None:
-            is_labelled = (data.y == data.y)
-            loss = loss_fn(out[is_labelled], data.y[is_labelled].float())
+            is_labelled = (batch.y == batch.y)
+            loss = loss_fn(out[is_labelled], batch.y[is_labelled].float())
             total_loss += loss.detach().item()
 
     result_dict = evaluator.eval({
@@ -64,14 +64,14 @@ def train(model, train_loader, val_loader, test_loader, train_args, device):
 
         for epoch in range(train_args['epochs']):
             model.train()
-            optimizer.zero_grad()
 
             total_loss = 0
-            for data in train_loader:
-                data = data.to(device)
-                out = model(data.x, data.edge_index, data.edge_attr, data.batch)
-                is_labelled = (data.y == data.y)
-                loss = loss_fn(out[is_labelled], data.y[is_labelled].float())
+            for batch in train_loader:
+                batch = batch.to(device)
+                optimizer.zero_grad()
+                out = model(batch.x, batch.edge_index, batch.edge_attr, batch.batch)
+                is_labelled = (batch.y == batch.y)
+                loss = loss_fn(out[is_labelled], batch.y[is_labelled].float())
                 loss.backward()
                 optimizer.step()
                 total_loss += loss.detach().item()
