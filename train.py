@@ -75,14 +75,16 @@ def train(model, train_loader, val_loader, test_loader, train_args, device):
                 loss.backward()
                 optimizer.step()
                 total_loss += loss.detach().item()
+            
+            train_result_dict = evaluate(model, train_loader, evaluator, loss_fn, device)
+            val_result_dict = evaluate(model, val_loader, evaluator, loss_fn, device)
+            test_result_dict = evaluate(model, test_loader, evaluator, loss_fn, device)
+            logger.add_result(run, train_result_dict[eval_metric],
+                                val_result_dict[eval_metric],
+                                test_result_dict[eval_metric])
+            scheduler.step(val_result_dict[eval_metric])
 
             if (epoch + 1) % train_args['eval_interval'] == 0:
-                train_result_dict = evaluate(model, train_loader, evaluator, loss_fn, device)
-                val_result_dict = evaluate(model, val_loader, evaluator, loss_fn, device)
-                test_result_dict = evaluate(model, test_loader, evaluator, loss_fn, device)
-                logger.add_result(run, train_result_dict[eval_metric],
-                                  val_result_dict[eval_metric],
-                                  test_result_dict[eval_metric])
                 print(f"Run {(run + 1):02d}, "
                       f"Epoch {(epoch + 1):3d}/{train_args['epochs']:3d}, "
                       f"Train loss: {train_result_dict['loss']:.4f}, "
@@ -90,8 +92,6 @@ def train(model, train_loader, val_loader, test_loader, train_args, device):
                       f"Train {eval_metric}: {train_result_dict[eval_metric]:.4f}, "
                       f"Val {eval_metric}: {val_result_dict[eval_metric]:.4f}, "
                       f"Test {eval_metric}: {test_result_dict[eval_metric]:.4f}")
-
-                scheduler.step(val_result_dict[eval_metric])
 
         end_time = time.time()
         run_times.append(end_time - start_time)
