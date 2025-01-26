@@ -1,11 +1,13 @@
 import ogb.graphproppred
 import ogb.nodeproppred
+import torch
 from ogb.graphproppred import PygGraphPropPredDataset
 from ogb.graphproppred.mol_encoder import AtomEncoder, BondEncoder
 from torch import nn
 from torch_geometric.loader import DataLoader
+from torch_geometric.utils import degree
 
-from models import DNA
+import models
 from utils import sort_graphs
 
 
@@ -36,11 +38,12 @@ def model_and_data_resolver(model_query, dataset_query, **kwargs):
 
     # Split the dataset into train/val/test dataloaders, and update model kwargs
     if dataset_query in ['ogbg-molhiv', 'ogbg-molpcba']:
+        emb_dim = model_kwargs['hidden_channels'] if model_query == 'DeeperGCN' else 128
         model_kwargs.update({
-            'in_channels': 128,
-            'edge_dim': 128,
-            'node_encoder': AtomEncoder(emb_dim=128),
-            'edge_encoder': BondEncoder(emb_dim=128),
+            'in_channels': emb_dim,
+            'edge_dim': emb_dim,
+            'node_encoder': AtomEncoder(emb_dim=emb_dim),
+            'edge_encoder': BondEncoder(emb_dim=emb_dim),
             'num_pred_heads': dataset.num_tasks
         })
         train_loader = DataLoader(dataset[split_idx["train"]], batch_size=batch_size, shuffle=True)
@@ -49,7 +52,33 @@ def model_and_data_resolver(model_query, dataset_query, **kwargs):
 
     # Load the model
     if model_query == 'DNA':
-        model = DNA(**model_kwargs)
+        model = models.DNA(**model_kwargs)
+    elif model_query == 'DeeperGCN':
+        model = models.DeeperGCN(**model_kwargs)
+    elif model_query == 'EGC':
+        model = models.EGC(**model_kwargs)
+    elif model_query == 'GCN':
+        model = models.GCN(**model_kwargs)
+    elif model_query == 'GIN':
+        model = models.GIN(**model_kwargs)
+    elif model_query == 'GINE':
+        model = models.GINE(**model_kwargs)
+    elif model_query == 'PNA':
+        train_dataset = dataset[split_idx["train"]]
+
+        # Compute the maximum in-degree in the training data.
+        max_degree = -1
+        for data in train_dataset:
+            d = degree(data.edge_index[1], num_nodes=data.num_nodes, dtype=torch.long)
+            max_degree = max(max_degree, int(d.max()))
+
+        # Compute the in-degree histogram tensor
+        deg = torch.zeros(max_degree + 1, dtype=torch.long)
+        for data in train_dataset:
+            d = degree(data.edge_index[1], num_nodes=data.num_nodes, dtype=torch.long)
+            deg += torch.bincount(d, minlength=deg.numel())
+
+        model = models.PNA(deg=deg, **model_kwargs)
     else:
         raise ValueError(f"Could not resolve dataset '{model_query}' among choices {model_choices}")
 
