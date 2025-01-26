@@ -7,7 +7,6 @@ import torch
 import torch_geometric
 import yaml
 from configargparse import YAMLConfigFileParser
-from torch_geometric.loader import DataLoader
 from torch_geometric.nn.resolver import optimizer_resolver, lr_scheduler_resolver
 
 from utils import Logger, evaluator_resolver, loss_resolver, model_and_data_resolver
@@ -75,13 +74,13 @@ def train(model, train_loader, val_loader, test_loader, train_args, device):
                 loss.backward()
                 optimizer.step()
                 total_loss += loss.detach().item()
-            
+
             train_result_dict = evaluate(model, train_loader, evaluator, loss_fn, device)
             val_result_dict = evaluate(model, val_loader, evaluator, loss_fn, device)
             test_result_dict = evaluate(model, test_loader, evaluator, loss_fn, device)
             logger.add_result(run, train_result_dict[eval_metric],
-                                val_result_dict[eval_metric],
-                                test_result_dict[eval_metric])
+                              val_result_dict[eval_metric],
+                              test_result_dict[eval_metric])
             scheduler.step(val_result_dict[eval_metric])
 
             if (epoch + 1) % train_args['eval_interval'] == 0:

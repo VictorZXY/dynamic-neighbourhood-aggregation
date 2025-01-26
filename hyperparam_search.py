@@ -20,7 +20,7 @@ def train_DNA(
         lr: float = 1e-3,
         weight_decay: float = 1e-5,
         epochs: int = 50,
-        device: int = 'cuda:0'):
+        device: str = 'cuda:0'):
     # Load device
     device = torch.device(device if torch.cuda.is_available() else 'cpu')
 
@@ -124,7 +124,7 @@ if __name__ == '__main__':
     # direction="maximize" because we want to maximize ROC-AUC
     study = optuna.create_study(
         direction='maximize',
-        sampler=optuna.samplers.TPESampler(seed=42), 
+        sampler=optuna.samplers.TPESampler(seed=42),
         # pruner=optuna.pruners.MedianPruner(
         #     n_warmup_steps=10,  # no pruning the first 10 epochs
         #     interval_steps=1)   # check for pruning every epoch
