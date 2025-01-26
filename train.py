@@ -88,7 +88,8 @@ def train(model, train_loader, val_loader, test_loader, train_args, device):
                       f"Train loss: {train_result_dict['loss']:.4f}, "
                       f"Val loss: {val_result_dict['loss']:.4f}, "
                       f"Train {eval_metric}: {train_result_dict[eval_metric]:.4f}, "
-                      f"Val {eval_metric}: {val_result_dict[eval_metric]:.4f}")
+                      f"Val {eval_metric}: {val_result_dict[eval_metric]:.4f}, "
+                      f"Test {eval_metric}: {test_result_dict[eval_metric]:.4f}")
 
                 scheduler.step(val_result_dict[eval_metric])
 
