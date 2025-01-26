@@ -16,7 +16,7 @@ class DNA(nn.Module):
                  channel_list=None, in_channels=None, hidden_channels=None, out_channels=None, num_layers=None,
                  edge_dim=None, node_encoder=None, edge_encoder=None, num_pre_layers=1, num_post_layers=1,
                  num_pred_heads=None, num_pred_layers=3, readout=None, dropout=0.0, batch_norm=True,
-                 act='relu', act_first=False, act_kwargs=None, residual=False, **kwargs):
+                 act='relu', act_first=False, act_kwargs=None, **kwargs):
         super(DNA, self).__init__()
 
         if in_channels is not None:
@@ -46,7 +46,6 @@ class DNA(nn.Module):
 
         self.act = activation_resolver(act, **(act_kwargs or {}))
         self.act_first = act_first
-        self.residual = residual
 
         if isinstance(dropout, float):
             dropout = [dropout] * (len(channel_list) - 1)
@@ -62,7 +61,7 @@ class DNA(nn.Module):
         self.num_pred_heads = num_pred_heads
         if num_pred_heads:
             out_channels = channel_list[-1]
-            if num_pre_layers > out_channels:
+            if num_pred_heads > out_channels:
                 raise ValueError(f"Number of output channels ({out_channels}) must be "
                                  f"greater than the number of prediction heads ({num_pred_heads})")
             num_proj_layers = min(num_pred_layers, math.ceil(math.log2(out_channels / num_pred_heads)))
@@ -90,19 +89,14 @@ class DNA(nn.Module):
             edge_attr = self.edge_encoder(edge_attr)
 
         for conv, batch_norm, dropout in zip(self.convs, self.batch_norms, self.dropout):
-            h = conv(x, edge_index=edge_index, edge_attr=edge_attr)
+            x = conv(x, edge_index=edge_index, edge_attr=edge_attr)
 
             if self.act is not None and self.act_first:
-                h = self.act(h)
+                x = self.act(x)
             if batch_norm is not None:
-                h = batch_norm(h)
+                x = batch_norm(x)
             if self.act is not None and not self.act_first:
-                h = self.act(h)
-
-            if self.residual:
-                x = h + x
-            else:
-                x = h
+                x = self.act(x)
 
             x = F.dropout(x, p=dropout, training=self.training)
 
