@@ -1,3 +1,5 @@
+from statistics import median
+
 import optuna
 import torch
 from ogb.graphproppred import PygGraphPropPredDataset, Evaluator
@@ -10,10 +12,11 @@ from utils import sort_graphs
 
 
 def train_DNA(
-        trial,
+        trial: optuna.Trial,
         hidden_channels: int = 128,
         num_layers: int = 4,
         dropout: float = 0.3,
+        batch_size: int = 256,
         lr: float = 1e-3,
         weight_decay: float = 1e-5,
         epochs: int = 50,
@@ -25,9 +28,9 @@ def train_DNA(
     dataset = PygGraphPropPredDataset(name='ogbg-molhiv', root='data/')
     split_idx = dataset.get_idx_split()
     dataset = sort_graphs(dataset, sort_y=False)
-    train_loader = DataLoader(dataset[split_idx['train']], batch_size=256, shuffle=True)
-    val_loader = DataLoader(dataset[split_idx['valid']], batch_size=256, shuffle=False)
-    test_loader = DataLoader(dataset[split_idx['test']], batch_size=256, shuffle=False)
+    train_loader = DataLoader(dataset[split_idx['train']], batch_size=batch_size, shuffle=True)
+    val_loader = DataLoader(dataset[split_idx['valid']], batch_size=batch_size, shuffle=False)
+    test_loader = DataLoader(dataset[split_idx['test']], batch_size=batch_size, shuffle=False)
 
     # Instantiate model
     model = DNA(
@@ -45,6 +48,7 @@ def train_DNA(
 
     loss_fn = nn.BCEWithLogitsLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max')
     evaluator = Evaluator(name='ogbg-molhiv')
 
     all_results = []
@@ -72,33 +76,30 @@ def train_DNA(
                 y_true.append(batch.y)
                 y_pred.append(out)
 
-        result_dict = evaluator.eval({
+        result = evaluator.eval({
             'y_true': torch.cat(y_true, dim=0),
-            'y_pred': torch.cat(y_pred, dim=0)})
-        result = result_dict[evaluator.eval_metric]
-
+            'y_pred': torch.cat(y_pred, dim=0)})[evaluator.eval_metric]
         all_results.append(result)
+        scheduler.step(result)
 
-        # # ---- Report to Optuna ----
-        # # Step is the epoch index (0, 1, 2, ...)
+        # # ---- Pruning ----
         # trial.report(result, step=epoch)
-
-        # # Check if we should prune (i.e., stop this trial early)
         # if trial.should_prune():
         #     raise optuna.TrialPruned()
 
     if epochs < 5:
-        return sum(all_results) / len(all_results)
+        return median(all_results)
     else:
-        return sum(all_results[-5:]) / 5
+        return median(all_results[-5:])
 
 
 def objective(trial: optuna.Trial) -> float:
     # --- Search spaces for the hyperparameters ---
-    hidden_channels = trial.suggest_categorical('hidden_channels', [64, 128, 256, 512])
+    hidden_channels = trial.suggest_categorical('hidden_channels', [128, 256, 512])
     num_layers = trial.suggest_int('num_layers', 2, 6)
     dropout = trial.suggest_float('dropout', 0.0, 0.7)
-    lr = trial.suggest_float('lr', 1e-4, 1e-2, log=True)
+    batch_size = trial.suggest_categorical('batch_size', [256, 512])
+    lr = trial.suggest_float('lr', 1e-5, 1e-2, log=True)
     weight_decay = trial.suggest_float('weight_decay', 1e-6, 1e-3, log=True)
 
     # --- Train model with these hyperparameters ---
@@ -107,6 +108,7 @@ def objective(trial: optuna.Trial) -> float:
         hidden_channels=hidden_channels,
         num_layers=num_layers,
         dropout=dropout,
+        batch_size=batch_size,
         lr=lr,
         weight_decay=weight_decay,
         epochs=50,
@@ -125,7 +127,7 @@ if __name__ == '__main__':
         sampler=optuna.samplers.TPESampler(seed=42), 
         # pruner=optuna.pruners.MedianPruner(
         #     n_warmup_steps=10,  # no pruning the first 10 epochs
-        #     interval_steps=1)    # check for pruning every epoch
+        #     interval_steps=1)   # check for pruning every epoch
     )
 
     # Optimize the objective function for N trials
