@@ -3,11 +3,10 @@ from statistics import median
 import optuna
 import torch
 from torch import nn
-from torch.nn import Embedding
 from torch_geometric.datasets import ZINC
 from torch_geometric.loader import DataLoader
 
-from models import DNA, Encoder
+import models
 from utils import sort_graphs
 from utils.evaluator import ZINCEvaluator
 from utils.transforms import ZINCTransform
@@ -41,14 +40,14 @@ def train_DNA(
     test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 
     # ---- Instantiate model ----
-    model = DNA(
+    model = models.DNA(
         in_channels=128,
         hidden_channels=hidden_channels,
         out_channels=hidden_channels,
         num_layers=num_layers,
         edge_dim=128,
-        node_encoder=Encoder(21, embedding_dim=128, num_features=1),
-        edge_encoder=Embedding(4, embedding_dim=128),
+        node_encoder=models.Encoder(21, embedding_dim=128, num_features=1),
+        edge_encoder=nn.Embedding(4, embedding_dim=128),
         num_pred_heads=1,
         dropout=dropout,
         readout='mean',
@@ -138,7 +137,7 @@ if __name__ == '__main__':
     )
 
     # Optimize the objective function for N trials
-    study.optimize(objective, n_trials=100)
+    study.optimize(objective, n_trials=50)
 
     # Print out the best trial
     best_trial = study.best_trial

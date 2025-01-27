@@ -7,7 +7,7 @@ from ogb.graphproppred.mol_encoder import AtomEncoder, BondEncoder
 from torch import nn
 from torch_geometric.loader import DataLoader
 
-from models import DNA
+import models
 from utils import sort_graphs
 
 
@@ -33,7 +33,7 @@ def train_DNA(
     test_loader = DataLoader(dataset[split_idx['test']], batch_size=batch_size, shuffle=False)
 
     # ---- Instantiate model ----
-    model = DNA(
+    model = models.DNA(
         in_channels=128,
         hidden_channels=hidden_channels,
         out_channels=hidden_channels,
@@ -112,7 +112,7 @@ def objective(trial: optuna.Trial) -> float:
         lr=lr,
         weight_decay=weight_decay,
         epochs=50,
-        device='cuda:0'
+        device='cuda:1'
     )
 
     # Since we want to maximise the validation ROC-AUC, we return it directly.
@@ -131,7 +131,7 @@ if __name__ == '__main__':
     )
 
     # Optimize the objective function for N trials
-    study.optimize(objective, n_trials=100)
+    study.optimize(objective, n_trials=50)
 
     # Print out the best trial
     best_trial = study.best_trial
