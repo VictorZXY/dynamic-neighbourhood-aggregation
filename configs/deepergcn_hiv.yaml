@@ -1,28 +1,27 @@
-experiment_name: egc_pcba
+experiment_name: deepergcn_hiv
 
 # Model specific arguments/hyperparameters
-model: EGC
+model: DeeperGCN
 model_args:
   hidden_channels: 256
   out_channels: 256
-  num_layers: 2
-  use_multi_aggregators: True
+  num_layers: 4
+  num_trans_layers: 1
   num_pred_layers: 3
-  dropout: 0.03
+  dropout: 0.05
   readout: mean
 
 # Dataset specific arguments/hyperparameters
-dataset: ogbg-molpcba
+dataset: ogbg-molhiv
 data_args:
   root: data/
-  task_type: graph classification
   batch_size: 512
 
 # Training specific arguments/hyperparameters
 cuda: 3
 seed: 42
 train_args:
-  runs: 3
+  runs: 5
   epochs: 150
   eval_interval: 10
   loss_fn: BCEWithLogitsLoss
@@ -35,6 +34,6 @@ train_args:
     mode: max
   evaluator: OGBGraphPropPredEvaluator
   evaluator_kwargs:
-    name: ogbg-molpcba
+    name: ogbg-molhiv
 checkpoint_dir: out/checkpoints/
 log_dir: out/logs/
