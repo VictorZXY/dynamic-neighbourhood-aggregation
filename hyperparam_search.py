@@ -18,7 +18,6 @@ def train_DNA(
         dropout: float = 0.3,
         batch_size: int = 256,
         lr: float = 1e-3,
-        weight_decay: float = 1e-5,
         epochs: int = 50,
         device: str = 'cuda:0'):
     # Load device
@@ -47,7 +46,7 @@ def train_DNA(
     ).to(device)
 
     loss_fn = nn.BCEWithLogitsLoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max')
     evaluator = Evaluator(name='ogbg-molhiv')
 
@@ -96,11 +95,10 @@ def train_DNA(
 def objective(trial: optuna.Trial) -> float:
     # --- Search spaces for the hyperparameters ---
     hidden_channels = trial.suggest_categorical('hidden_channels', [128, 256, 512])
-    num_layers = trial.suggest_int('num_layers', 2, 6)
+    num_layers = trial.suggest_int('num_layers', 2, 4)
     dropout = trial.suggest_float('dropout', 0.0, 0.7)
     batch_size = trial.suggest_categorical('batch_size', [256, 512])
     lr = trial.suggest_float('lr', 1e-5, 1e-2, log=True)
-    weight_decay = trial.suggest_float('weight_decay', 1e-6, 1e-3, log=True)
 
     # --- Train model with these hyperparameters ---
     result = train_DNA(
@@ -110,7 +108,6 @@ def objective(trial: optuna.Trial) -> float:
         dropout=dropout,
         batch_size=batch_size,
         lr=lr,
-        weight_decay=weight_decay,
         epochs=50,
         device='cuda:1'
     )
