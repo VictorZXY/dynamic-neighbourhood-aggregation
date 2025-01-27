@@ -1,14 +1,15 @@
-experiment_name: dna_pcba
+experiment_name: gine_pcba
 
 # Model specific arguments/hyperparameters
-model: DNA
+model: GINE
 model_args:
   hidden_channels: 256
   out_channels: 256
   num_layers: 2
-  num_pre_layers: 1
-  num_post_layers: 1
+  num_trans_layers: 1
   num_pred_layers: 3
+  eps: 0.0
+  train_eps: True
   dropout: 0.03
   readout: mean
 

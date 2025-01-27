@@ -3,14 +3,13 @@ experiment_name: dna_hiv
 # Model specific arguments/hyperparameters
 model: DNA
 model_args:
-  hidden_channels: 512
-  out_channels: 512
+  hidden_channels: 256
+  out_channels: 256
   num_layers: 2
   num_pre_layers: 1
   num_post_layers: 1
   num_pred_layers: 3
-  dropout: 0.4
-  residual: False
+  dropout: 0.03
   readout: mean
 
 # Dataset specific arguments/hyperparameters
@@ -18,7 +17,7 @@ dataset: ogbg-molhiv
 data_args:
   root: data/
   task_type: graph classification
-  batch_size: 256
+  batch_size: 512
 
 # Training specific arguments/hyperparameters
 cuda: 1
@@ -30,8 +29,8 @@ train_args:
   loss_fn: BCEWithLogitsLoss
   optimizer: Adam
   optimizer_kwargs:
-    lr: 1.5e-4
-    weight_decay: 2.4e-6
+    lr: 6.5e-5
+    weight_decay: 3.0e-4
   scheduler: ReduceLROnPlateau
   scheduler_kwargs:
     mode: max

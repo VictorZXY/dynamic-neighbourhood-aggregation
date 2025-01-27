@@ -1,13 +1,11 @@
-experiment_name: dna_pcba
+experiment_name: gcn_pcba
 
 # Model specific arguments/hyperparameters
-model: DNA
+model: GCN
 model_args:
   hidden_channels: 256
   out_channels: 256
   num_layers: 2
-  num_pre_layers: 1
-  num_post_layers: 1
   num_pred_layers: 3
   dropout: 0.03
   readout: mean
@@ -20,7 +18,7 @@ data_args:
   batch_size: 512
 
 # Training specific arguments/hyperparameters
-cuda: 1
+cuda: 0
 seed: 42
 train_args:
   runs: 3

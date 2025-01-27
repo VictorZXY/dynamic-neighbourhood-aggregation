@@ -1,7 +1,7 @@
-experiment_name: dna_pcba
+experiment_name: pna_pcba
 
 # Model specific arguments/hyperparameters
-model: DNA
+model: PNA
 model_args:
   hidden_channels: 256
   out_channels: 256
@@ -20,7 +20,7 @@ data_args:
   batch_size: 512
 
 # Training specific arguments/hyperparameters
-cuda: 1
+cuda: 2
 seed: 42
 train_args:
   runs: 3
