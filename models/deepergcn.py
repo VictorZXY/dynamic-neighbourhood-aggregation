@@ -13,7 +13,7 @@ from torch_geometric.utils import to_dense_batch
 class DeeperGCN(nn.Module):
     def __init__(self, *,
                  channel_list=None, in_channels=None, hidden_channels=None, out_channels=None, num_layers=None,
-                 edge_dim=None, node_encoder=None, edge_encoder=None, aggregator="softmax",
+                 edge_dim=None, node_encoder=None, edge_encoder=None, aggregator='softmax',
                  num_trans_layers=1, num_pred_heads=None, num_pred_layers=3, readout=None,
                  dropout=0.0, batch_norm=True, act='relu', act_kwargs=None, **kwargs):
         super(DeeperGCN, self).__init__()
