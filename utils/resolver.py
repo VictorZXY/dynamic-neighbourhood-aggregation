@@ -4,11 +4,14 @@ import torch
 from ogb.graphproppred import PygGraphPropPredDataset
 from ogb.graphproppred.mol_encoder import AtomEncoder, BondEncoder
 from torch import nn
+from torch_geometric.datasets import ZINC
 from torch_geometric.loader import DataLoader
 from torch_geometric.utils import degree
 
 import models
 from utils import sort_graphs
+from utils.evaluator import ZINCEvaluator
+from utils.transforms import ZINCTransform
 
 
 def model_and_data_resolver(model_query, dataset_query, **kwargs):
@@ -17,38 +20,59 @@ def model_and_data_resolver(model_query, dataset_query, **kwargs):
     batch_size = dataset_kwargs.pop('batch_size', 1)
     task_type = dataset_kwargs.pop('task_type', '')
 
-    model_choices = ['DNA']
-    dataset_choices = ['ogbg-molhiv', 'ogbg-molpcba']
+    model_choices = ['DNA', 'DeeperGCN', 'EGC', 'GCN', 'GIN', 'GINE', 'PNA']
+    dataset_choices = ['ogbg-molhiv', 'ogbg-molpcba', 'ZINC']
 
     # Load the dataset
     if dataset_query in ['ogbg-molhiv', 'ogbg-molpcba']:
         dataset = PygGraphPropPredDataset(name=dataset_query, **dataset_kwargs)
         split_idx = dataset.get_idx_split()
+        train_dataset = dataset[split_idx['train']]
+        val_dataset = dataset[split_idx['valid']]
+        test_dataset = dataset[split_idx['test']]
+    elif dataset_query == 'ZINC':
+        zinc_transform = ZINCTransform()
+        train_dataset = ZINC('data/zinc', subset=False, split='train', pre_transform=zinc_transform)
+        val_dataset = ZINC('data/zinc', subset=False, split='val', pre_transform=zinc_transform)
+        test_dataset = ZINC('data/zinc', subset=False, split='test', pre_transform=zinc_transform)
     else:
         raise ValueError(f"Could not resolve dataset '{dataset_query}' among choices {dataset_choices}")
 
     # Sort the nodes and edge indices in the dataset
     if 'graph' in task_type:
-        dataset = sort_graphs(dataset, sort_y=False)
+        train_dataset = sort_graphs(train_dataset, sort_y=False)
+        val_dataset = sort_graphs(val_dataset, sort_y=False)
+        test_dataset = sort_graphs(test_dataset, sort_y=False)
     elif 'node' in task_type:
         dataset = sort_graphs(dataset, sort_y=True)
     else:
         raise ValueError(f"Could not resolve task type '{task_type}'. "
                          f"Please specify the task type in the format: (node|graph) (classification|regression)")
 
-    # Split the dataset into train/val/test dataloaders, and update model kwargs
+    # Split the dataset into train/val/test dataloaders
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
+    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
+
+    # Update model kwargs
     if dataset_query in ['ogbg-molhiv', 'ogbg-molpcba']:
-        emb_dim = model_kwargs['hidden_channels'] if model_query == 'DeeperGCN' else 128
+        embedding_dim = model_kwargs['hidden_channels'] if model_query == 'DeeperGCN' else 128
         model_kwargs.update({
-            'in_channels': emb_dim,
-            'edge_dim': emb_dim,
-            'node_encoder': AtomEncoder(emb_dim=emb_dim),
-            'edge_encoder': BondEncoder(emb_dim=emb_dim),
+            'in_channels': embedding_dim,
+            'edge_dim': embedding_dim,
+            'node_encoder': AtomEncoder(emb_dim=embedding_dim),
+            'edge_encoder': BondEncoder(emb_dim=embedding_dim),
             'num_pred_heads': dataset.num_tasks
         })
-        train_loader = DataLoader(dataset[split_idx["train"]], batch_size=batch_size, shuffle=True)
-        val_loader = DataLoader(dataset[split_idx["valid"]], batch_size=batch_size, shuffle=False)
-        test_loader = DataLoader(dataset[split_idx["test"]], batch_size=batch_size, shuffle=False)
+    elif dataset_query == 'ZINC':
+        embedding_dim = model_kwargs['hidden_channels'] if model_query == 'DeeperGCN' else 128
+        model_kwargs.update({
+            'in_channels': embedding_dim,
+            'edge_dim': embedding_dim,
+            'node_encoder': models.Encoder(21, embedding_dim=embedding_dim, num_features=1),
+            'edge_encoder': nn.Embedding(4, embedding_dim=128),
+            'num_pred_heads': 1
+        })
 
     # Load the model
     if model_query == 'DNA':
@@ -64,8 +88,6 @@ def model_and_data_resolver(model_query, dataset_query, **kwargs):
     elif model_query == 'GINE':
         model = models.GINE(**model_kwargs)
     elif model_query == 'PNA':
-        train_dataset = dataset[split_idx["train"]]
-
         # Compute the maximum in-degree in the training data.
         max_degree = -1
         for data in train_dataset:
@@ -100,6 +122,7 @@ def evaluator_resolver(query, **kwargs):
     choices = {
         'OGBNodePropPredEvaluator': ogb.nodeproppred.Evaluator,
         'OGBGraphPropPredEvaluator': ogb.graphproppred.Evaluator,
+        'ZINC': ZINCEvaluator,
     }
 
     if query not in choices:
