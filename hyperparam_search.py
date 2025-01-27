@@ -18,12 +18,13 @@ def train_DNA(
         dropout: float = 0.3,
         batch_size: int = 256,
         lr: float = 1e-3,
+        weight_decay: float = 1e-5,
         epochs: int = 50,
         device: str = 'cuda:0'):
-    # Load device
+    # ---- Load device ----
     device = torch.device(device if torch.cuda.is_available() else 'cpu')
 
-    # Load data
+    # ---- Load data ----
     dataset = PygGraphPropPredDataset(name='ogbg-molhiv', root='data/')
     split_idx = dataset.get_idx_split()
     dataset = sort_graphs(dataset, sort_y=False)
@@ -31,7 +32,7 @@ def train_DNA(
     val_loader = DataLoader(dataset[split_idx['valid']], batch_size=batch_size, shuffle=False)
     test_loader = DataLoader(dataset[split_idx['test']], batch_size=batch_size, shuffle=False)
 
-    # Instantiate model
+    # ---- Instantiate model ----
     model = DNA(
         in_channels=128,
         hidden_channels=hidden_channels,
@@ -46,7 +47,7 @@ def train_DNA(
     ).to(device)
 
     loss_fn = nn.BCEWithLogitsLoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max')
     evaluator = Evaluator(name='ogbg-molhiv')
 
@@ -94,11 +95,12 @@ def train_DNA(
 
 def objective(trial: optuna.Trial) -> float:
     # --- Search spaces for the hyperparameters ---
-    hidden_channels = trial.suggest_categorical('hidden_channels', [128, 256, 512])
-    num_layers = trial.suggest_int('num_layers', 2, 4)
+    hidden_channels = 256
+    num_layers = trial.suggest_categorical('num_layers', [4, 6, 8, 10])
     dropout = trial.suggest_float('dropout', 0.0, 0.7)
-    batch_size = trial.suggest_categorical('batch_size', [256, 512])
+    batch_size = 512
     lr = trial.suggest_float('lr', 1e-5, 1e-2, log=True)
+    weight_decay = trial.suggest_float('weight_decay', 1e-6, 1e-3, log=True)
 
     # --- Train model with these hyperparameters ---
     result = train_DNA(
@@ -108,8 +110,9 @@ def objective(trial: optuna.Trial) -> float:
         dropout=dropout,
         batch_size=batch_size,
         lr=lr,
+        weight_decay=weight_decay,
         epochs=50,
-        device='cuda:1'
+        device='cuda:0'
     )
 
     # Since we want to maximise the validation ROC-AUC, we return it directly.
@@ -118,13 +121,13 @@ def objective(trial: optuna.Trial) -> float:
 
 if __name__ == '__main__':
     # Create a study object
-    # direction="maximize" because we want to maximize ROC-AUC
+    # direction='maximize' because we want to maximize ROC-AUC
     study = optuna.create_study(
         direction='maximize',
         sampler=optuna.samplers.TPESampler(seed=42),
         # pruner=optuna.pruners.MedianPruner(
-        #     n_warmup_steps=10,  # no pruning the first 10 epochs
-        #     interval_steps=1)   # check for pruning every epoch
+        #     n_warmup_steps=10,  # No pruning the first 10 epochs
+        #     interval_steps=1)   # Check for pruning every epoch
     )
 
     # Optimize the objective function for N trials
