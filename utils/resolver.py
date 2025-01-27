@@ -18,7 +18,6 @@ def model_and_data_resolver(model_query, dataset_query, **kwargs):
     model_kwargs = kwargs.get('model_args', {})
     dataset_kwargs = kwargs.get('data_args', {})
     batch_size = dataset_kwargs.pop('batch_size', 1)
-    task_type = dataset_kwargs.pop('task_type', '')
 
     model_choices = ['DNA', 'DeeperGCN', 'EGC', 'GCN', 'GIN', 'GINE', 'PNA']
     dataset_choices = ['ogbg-molhiv', 'ogbg-molpcba', 'ZINC']
@@ -27,6 +26,8 @@ def model_and_data_resolver(model_query, dataset_query, **kwargs):
     if dataset_query in ['ogbg-molhiv', 'ogbg-molpcba']:
         dataset = PygGraphPropPredDataset(name=dataset_query, **dataset_kwargs)
         split_idx = dataset.get_idx_split()
+
+        dataset = sort_graphs(dataset, sort_y=False)
         train_dataset = dataset[split_idx['train']]
         val_dataset = dataset[split_idx['valid']]
         test_dataset = dataset[split_idx['test']]
@@ -35,19 +36,12 @@ def model_and_data_resolver(model_query, dataset_query, **kwargs):
         train_dataset = ZINC('data/zinc', subset=False, split='train', pre_transform=zinc_transform)
         val_dataset = ZINC('data/zinc', subset=False, split='val', pre_transform=zinc_transform)
         test_dataset = ZINC('data/zinc', subset=False, split='test', pre_transform=zinc_transform)
-    else:
-        raise ValueError(f"Could not resolve dataset '{dataset_query}' among choices {dataset_choices}")
-
-    # Sort the nodes and edge indices in the dataset
-    if 'graph' in task_type:
+        
         train_dataset = sort_graphs(train_dataset, sort_y=False)
         val_dataset = sort_graphs(val_dataset, sort_y=False)
         test_dataset = sort_graphs(test_dataset, sort_y=False)
-    elif 'node' in task_type:
-        dataset = sort_graphs(dataset, sort_y=True)
     else:
-        raise ValueError(f"Could not resolve task type '{task_type}'. "
-                         f"Please specify the task type in the format: (node|graph) (classification|regression)")
+        raise ValueError(f"Could not resolve dataset '{dataset_query}' among choices {dataset_choices}")
 
     # Split the dataset into train/val/test dataloaders
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
