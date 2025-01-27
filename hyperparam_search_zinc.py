@@ -103,7 +103,7 @@ def train_DNA(
 def objective(trial: optuna.Trial) -> float:
     # --- Search spaces for the hyperparameters ---
     hidden_channels = 256
-    num_layers = trial.suggest_categorical('num_layers', [4, 6, 8, 10])
+    num_layers = 4
     dropout = trial.suggest_float('dropout', 0.0, 0.7)
     batch_size = 512
     lr = trial.suggest_float('lr', 1e-5, 1e-2, log=True)
