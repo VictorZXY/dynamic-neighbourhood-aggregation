@@ -9,7 +9,7 @@ from torch_geometric.loader import DataLoader
 import models
 from utils import sort_graphs
 from utils.evaluator import ZINCEvaluator
-from utils.transforms import ZINCTransform
+from utils.transforms import UnsqueezeTargetDim
 
 
 def train_DNA(
@@ -26,7 +26,7 @@ def train_DNA(
     device = torch.device(device if torch.cuda.is_available() else 'cpu')
 
     # ---- Load data ---- 
-    zinc_transform = ZINCTransform()
+    zinc_transform = UnsqueezeTargetDim()
     train_dataset = ZINC('data/zinc', subset=True, split='train', pre_transform=zinc_transform)
     val_dataset = ZINC('data/zinc', subset=True, split='val', pre_transform=zinc_transform)
     test_dataset = ZINC('data/zinc', subset=True, split='test', pre_transform=zinc_transform)
