@@ -1,17 +1,18 @@
 import ogb.graphproppred
 import ogb.nodeproppred
 import torch
+import torch_geometric.transforms as T
 from ogb.graphproppred import PygGraphPropPredDataset
 from ogb.graphproppred.mol_encoder import AtomEncoder, BondEncoder
 from torch import nn
-from torch_geometric.datasets import ZINC
+from torch_geometric.datasets import MNISTSuperpixels, ZINC
 from torch_geometric.loader import DataLoader
 from torch_geometric.utils import degree
 
 import models
 from utils import sort_graphs
 from utils.evaluator import ZINCEvaluator
-from utils.transforms import ZINCTransform
+from utils.transforms import RemoveEdgeAttr, UnsqueezeTargetDim
 
 
 def model_and_data_resolver(model_query, dataset_query, **kwargs):
@@ -20,10 +21,30 @@ def model_and_data_resolver(model_query, dataset_query, **kwargs):
     batch_size = dataset_kwargs.pop('batch_size', 1)
 
     model_choices = ['DNA', 'DeeperGCN', 'EGC', 'GCN', 'GIN', 'GINE', 'PNA']
-    dataset_choices = ['ogbg-molhiv', 'ogbg-molpcba', 'ZINC']
+    dataset_choices = ['MNISTSuperpixels', 'ZINC', 'ogbg-molhiv', 'ogbg-molpcba']
 
     # Load the dataset
-    if dataset_query in ['ogbg-molhiv', 'ogbg-molpcba']:
+    if dataset_query == 'MNISTSuperpixels':
+        transform = T.Compose([
+            T.Cartesian(cat=False),
+            RemoveEdgeAttr(),
+            UnsqueezeTargetDim(),
+        ])
+        train_dataset = MNISTSuperpixels(train=True, transform=transform, **dataset_kwargs)
+        val_dataset = test_dataset = MNISTSuperpixels(train=False, transform=transform, **dataset_kwargs)
+
+        train_dataset = sort_graphs(train_dataset, sort_y=False)
+        val_dataset = test_dataset = sort_graphs(test_dataset, sort_y=False)
+    elif dataset_query == 'ZINC':
+        transform = UnsqueezeTargetDim()
+        train_dataset = ZINC(subset=False, split='train', transform=transform, **dataset_kwargs)
+        val_dataset = ZINC(subset=False, split='val', transform=transform, **dataset_kwargs)
+        test_dataset = ZINC(subset=False, split='test', transform=transform, **dataset_kwargs)
+        
+        train_dataset = sort_graphs(train_dataset, sort_y=False)
+        val_dataset = sort_graphs(val_dataset, sort_y=False)
+        test_dataset = sort_graphs(test_dataset, sort_y=False)
+    elif dataset_query in ['ogbg-molhiv', 'ogbg-molpcba']:
         dataset = PygGraphPropPredDataset(name=dataset_query, **dataset_kwargs)
         split_idx = dataset.get_idx_split()
 
@@ -31,15 +52,6 @@ def model_and_data_resolver(model_query, dataset_query, **kwargs):
         train_dataset = dataset[split_idx['train']]
         val_dataset = dataset[split_idx['valid']]
         test_dataset = dataset[split_idx['test']]
-    elif dataset_query == 'ZINC':
-        zinc_transform = ZINCTransform()
-        train_dataset = ZINC('data/zinc', subset=False, split='train', pre_transform=zinc_transform)
-        val_dataset = ZINC('data/zinc', subset=False, split='val', pre_transform=zinc_transform)
-        test_dataset = ZINC('data/zinc', subset=False, split='test', pre_transform=zinc_transform)
-        
-        train_dataset = sort_graphs(train_dataset, sort_y=False)
-        val_dataset = sort_graphs(val_dataset, sort_y=False)
-        test_dataset = sort_graphs(test_dataset, sort_y=False)
     else:
         raise ValueError(f"Could not resolve dataset '{dataset_query}' among choices {dataset_choices}")
 
