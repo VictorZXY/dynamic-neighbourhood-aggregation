@@ -63,8 +63,8 @@ def model_and_data_resolver(model_query, dataset_query, **kwargs):
         model_kwargs.update({
             'in_channels': embedding_dim,
             'edge_dim': embedding_dim,
-            'node_encoder': models.Encoder(21, embedding_dim=embedding_dim, num_features=1),
-            'edge_encoder': nn.Embedding(4, embedding_dim=128),
+            'node_encoder': models.Encoder(28, embedding_dim=embedding_dim, num_features=1),
+            'edge_encoder': nn.Embedding(4, embedding_dim=embedding_dim),
             'num_pred_heads': 1
         })
 
@@ -116,7 +116,7 @@ def evaluator_resolver(query, **kwargs):
     choices = {
         'OGBNodePropPredEvaluator': ogb.nodeproppred.Evaluator,
         'OGBGraphPropPredEvaluator': ogb.graphproppred.Evaluator,
-        'ZINC': ZINCEvaluator,
+        'ZINCEvaluator': ZINCEvaluator,
     }
 
     if query not in choices:
