@@ -6,6 +6,10 @@ class Logger:
 
     def __init__(self, runs, eval_metric, log_path=None):
         self.eval_metric = eval_metric
+        if eval_metric.lower() in ['mae']:
+            self.mode = 'min'
+        else:
+            self.mode = 'max'
         self.log_path = log_path
         self.results = [{'train': [], 'val': [], 'test': []} for _ in range(runs)]
 
@@ -18,24 +22,40 @@ class Logger:
     def print_statistics(self, run=None):
         if run is not None:
             result = {k: torch.tensor(v) for k, v in self.results[run].items()}
-            argmax = result['val'].argmax().item()
-            print(f"Run {(run + 1):02d}: "
-                  f"Best train {self.eval_metric}: {result['train'].max().item():.4f}, "
-                  f"Best val {self.eval_metric}: {result['val'].max().item():.4f}, "
-                  f"Best test {self.eval_metric}: {result['test'].max().item():.4f}")
+            if self.mode == 'max':
+                argmax = result['val'].argmax().item()
+                print(f"Run {(run + 1):02d}: "
+                    f"Best train {self.eval_metric}: {result['train'].max().item():.4f}, "
+                    f"Best val {self.eval_metric}: {result['val'].max().item():.4f}, "
+                    f"Best test {self.eval_metric}: {result['test'].max().item():.4f}")
+            else:  
+                argmin = result['val'].argmin().item()
+                print(f"Run {(run + 1):02d}: "
+                    f"Best train {self.eval_metric}: {result['train'].min().item():.4f}, "
+                    f"Best val {self.eval_metric}: {result['val'].min().item():.4f}, "
+                    f"Best test {self.eval_metric}: {result['test'].min().item():.4f}")
         else:
             results = [{k: torch.tensor(v) for k, v in result.items()} for result in self.results]
 
             best_results = {'best_train': [], 'best_val': [], 'best_test': [],
                             'final_train': [], 'final_val': [], 'final_test': []}
             for result in results:
-                argmax = result['val'].argmax().item()
-                best_results['best_train'].append(result['train'].max().item())
-                best_results['best_val'].append(result['val'].max().item())
-                best_results['best_test'].append(result['test'].max().item())
-                # best_results['final_train'].append(result['train'][argmax].item())
-                # best_results['final_val'].append(result['val'][argmax].item())  # this should be equal to best_val
-                # best_results['final_test'].append(result['test'][argmax].item())
+                if self.mode == 'max':
+                    argmax = result['val'].argmax().item()
+                    best_results['best_train'].append(result['train'].max().item())
+                    best_results['best_val'].append(result['val'].max().item())
+                    best_results['best_test'].append(result['test'].max().item())
+                    # best_results['final_train'].append(result['train'][argmax].item())
+                    # best_results['final_val'].append(result['val'][argmax].item())  # this should be equal to best_val
+                    # best_results['final_test'].append(result['test'][argmax].item())
+                else:
+                    argmin = result['val'].argmin().item()
+                    best_results['best_train'].append(result['train'].min().item())
+                    best_results['best_val'].append(result['val'].min().item())
+                    best_results['best_test'].append(result['test'].min().item())
+                    # best_results['final_train'].append(result['train'][argmin].item())
+                    # best_results['final_val'].append(result['val'][argmin].item())  # this should be equal to best_val
+                    # best_results['final_test'].append(result['test'][argmin].item())
 
             best_results = {k: torch.tensor(v) for k, v in best_results.items()}
             print("All runs:")
