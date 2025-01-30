@@ -11,17 +11,13 @@ class MNISTEvaluator:
         y_true, y_pred = input_dict['y_true'], input_dict['y_pred']
 
         """
-            y_true: numpy ndarray or torch tensor of shape (num_graphs) or (num_graphs, 1)
-            y_pred: numpy ndarray or torch tensor of shape (num_graphs, 1)
+            y_true: numpy ndarray or torch tensor of shape (num_graphs)
+            y_pred: numpy ndarray or torch tensor of shape (num_graphs, num_classes=10)
         """
         
         y_pred = y_pred.argmax(dim=1)
-
-        if y_true.dim() == 1:
-            total_acc = y_pred.squeeze().eq(y_true).sum().item()
-        else:
-            total_acc = y_pred.eq(y_true).sum().item()
-
+        total_acc = y_pred.eq(y_true).sum().item()
+        
         return {self.eval_metric: total_acc / len(y_true)}
 
 
@@ -38,8 +34,8 @@ class ZINCEvaluator:
         y_true, y_pred = input_dict['y_true'], input_dict['y_pred']
 
         """
-            y_true: numpy ndarray or torch tensor of shape (num_graphs) or (num_graphs, 1)
-            y_pred: numpy ndarray or torch tensor of shape (num_graphs, 1)
+            y_true: numpy ndarray or torch tensor of shape (num_graphs) or (num_graphs, num_tasks=1)
+            y_pred: numpy ndarray or torch tensor of shape (num_graphs, num_tasks=1)
         """
         
         if y_true.dim() == 1:

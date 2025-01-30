@@ -11,7 +11,7 @@ from torch_geometric.utils import degree
 
 import models
 from utils import sort_graphs
-from utils.evaluator import ZINCEvaluator
+from utils.evaluator import MNISTEvaluator, ZINCEvaluator
 from utils.transforms import RemoveEdgeAttr, UnsqueezeTargetDim
 
 
@@ -27,19 +27,18 @@ def model_and_data_resolver(model_query, dataset_query, **kwargs):
     if dataset_query == 'MNISTSuperpixels':
         transform = T.Compose([
             T.Cartesian(cat=False),
-            RemoveEdgeAttr(),
-            UnsqueezeTargetDim(),
+            RemoveEdgeAttr()
         ])
-        train_dataset = MNISTSuperpixels(train=True, transform=transform, **dataset_kwargs)
-        val_dataset = test_dataset = MNISTSuperpixels(train=False, transform=transform, **dataset_kwargs)
+        train_dataset = MNISTSuperpixels(train=True, pre_transform=transform, **dataset_kwargs)
+        val_dataset = test_dataset = MNISTSuperpixels(train=False, pre_transform=transform, **dataset_kwargs)
 
         train_dataset = sort_graphs(train_dataset, sort_y=False)
         val_dataset = test_dataset = sort_graphs(test_dataset, sort_y=False)
     elif dataset_query == 'ZINC':
         transform = UnsqueezeTargetDim()
-        train_dataset = ZINC(subset=False, split='train', transform=transform, **dataset_kwargs)
-        val_dataset = ZINC(subset=False, split='val', transform=transform, **dataset_kwargs)
-        test_dataset = ZINC(subset=False, split='test', transform=transform, **dataset_kwargs)
+        train_dataset = ZINC(subset=False, split='train', pre_transform=transform, **dataset_kwargs)
+        val_dataset = ZINC(subset=False, split='val', pre_transform=transform, **dataset_kwargs)
+        test_dataset = ZINC(subset=False, split='test', pre_transform=transform, **dataset_kwargs)
         
         train_dataset = sort_graphs(train_dataset, sort_y=False)
         val_dataset = sort_graphs(val_dataset, sort_y=False)
@@ -61,14 +60,12 @@ def model_and_data_resolver(model_query, dataset_query, **kwargs):
     test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 
     # Update model kwargs
-    if dataset_query in ['ogbg-molhiv', 'ogbg-molpcba']:
+    if dataset_query == 'MNISTSuperpixels':
         embedding_dim = model_kwargs['hidden_channels'] if model_query == 'DeeperGCN' else 128
         model_kwargs.update({
             'in_channels': embedding_dim,
-            'edge_dim': embedding_dim,
-            'node_encoder': AtomEncoder(emb_dim=embedding_dim),
-            'edge_encoder': BondEncoder(emb_dim=embedding_dim),
-            'num_pred_heads': dataset.num_tasks
+            'node_encoder': nn.Linear(1, embedding_dim),
+            'num_pred_heads': train_dataset.num_classes
         })
     elif dataset_query == 'ZINC':
         embedding_dim = model_kwargs['hidden_channels'] if model_query == 'DeeperGCN' else 128
@@ -78,6 +75,15 @@ def model_and_data_resolver(model_query, dataset_query, **kwargs):
             'node_encoder': models.Encoder(28, embedding_dim=embedding_dim, num_features=1),
             'edge_encoder': nn.Embedding(4, embedding_dim=embedding_dim),
             'num_pred_heads': 1
+        })
+    elif dataset_query in ['ogbg-molhiv', 'ogbg-molpcba']:
+        embedding_dim = model_kwargs['hidden_channels'] if model_query == 'DeeperGCN' else 128
+        model_kwargs.update({
+            'in_channels': embedding_dim,
+            'edge_dim': embedding_dim,
+            'node_encoder': AtomEncoder(emb_dim=embedding_dim),
+            'edge_encoder': BondEncoder(emb_dim=embedding_dim),
+            'num_pred_heads': dataset.num_tasks
         })
 
     # Load the model
@@ -129,6 +135,7 @@ def evaluator_resolver(query, **kwargs):
         'OGBNodePropPredEvaluator': ogb.nodeproppred.Evaluator,
         'OGBGraphPropPredEvaluator': ogb.graphproppred.Evaluator,
         'ZINCEvaluator': ZINCEvaluator,
+        'MNISTEvaluator': MNISTEvaluator,
     }
 
     if query not in choices:

@@ -7,6 +7,7 @@ import torch
 import torch_geometric
 import yaml
 from configargparse import YAMLConfigFileParser
+from torch import nn
 from torch_geometric.nn.resolver import optimizer_resolver, lr_scheduler_resolver
 
 from utils import Logger, evaluator_resolver, loss_resolver, model_and_data_resolver
@@ -26,8 +27,12 @@ def evaluate(model, loader, evaluator, loss_fn, device):
         y_true.append(batch.y)
         y_pred.append(out)
         if loss_fn is not None:
-            is_labelled = (batch.y == batch.y)
-            loss = loss_fn(out[is_labelled], batch.y[is_labelled].float())
+            if isinstance(loss_fn, nn.CrossEntropyLoss):
+                is_labelled = (batch.y == batch.y).view(-1)
+                loss = loss_fn(out[is_labelled], batch.y[is_labelled].long())
+            else: 
+                is_labelled = (batch.y == batch.y)
+                loss = loss_fn(out[is_labelled], batch.y[is_labelled].float())
             total_loss += loss.detach().item()
 
     result_dict = evaluator.eval({
@@ -69,8 +74,12 @@ def train(model, train_loader, val_loader, test_loader, train_args, device):
                 batch = batch.to(device)
                 optimizer.zero_grad()
                 out = model(batch.x, batch.edge_index, batch.edge_attr, batch.batch)
-                is_labelled = (batch.y == batch.y)
-                loss = loss_fn(out[is_labelled], batch.y[is_labelled].float())
+                if isinstance(loss_fn, nn.CrossEntropyLoss):
+                    is_labelled = (batch.y == batch.y).view(-1)
+                    loss = loss_fn(out[is_labelled], batch.y[is_labelled].long())
+                else: 
+                    is_labelled = (batch.y == batch.y)
+                    loss = loss_fn(out[is_labelled], batch.y[is_labelled].float())
                 loss.backward()
                 optimizer.step()
                 total_loss += loss.detach().item()
