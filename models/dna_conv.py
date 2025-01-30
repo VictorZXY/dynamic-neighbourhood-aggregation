@@ -1,5 +1,5 @@
 import torch
-from torch.nn import Linear
+from torch import nn
 from torch_geometric.nn.conv import MessagePassing
 from torch_geometric.nn.models import MLP
 from torch_scatter import scatter
@@ -20,7 +20,7 @@ class DNAConv(MessagePassing):
             self.pre_nn = MLP(in_channels=2 * in_channels, hidden_channels=in_channels,
                               out_channels=in_channels, num_layers=num_pre_layers)
 
-        self.lin_aggr = Linear(in_channels, in_channels)
+        self.lin_aggr = nn.Linear(in_channels, in_channels)
         self.post_nn = MLP(in_channels=in_channels, hidden_channels=out_channels,
                            out_channels=out_channels, num_layers=num_post_layers)
 
