@@ -44,7 +44,7 @@ class DeeperGCN(nn.Module):
         self.layers = nn.ModuleList()
         for in_channels, out_channels, p_dropout in zip(channel_list[:-1], channel_list[1:], self.dropout):
             conv = GENConv(in_channels=in_channels, out_channels=out_channels, edge_dim=edge_dim,
-                           aggr=aggregator, num_layers=num_trans_layers, **kwargs)
+                           aggr=aggregator, learn_t=True, learn_p=True, num_layers=num_trans_layers, **kwargs)
             norm = BatchNorm(out_channels) if batch_norm else None
             act = activation_resolver(act, **(act_kwargs or {}))
 
