@@ -1,4 +1,4 @@
-experiment_name: deepergcn_zinc
+experiment_name: deepergcn_softmax_zinc
 
 # Model specific arguments/hyperparameters
 model: DeeperGCN
@@ -8,6 +8,7 @@ model_args:
   num_layers: 4
   num_trans_layers: 1
   num_pred_layers: 3
+  aggregator: softmax
   dropout: 0.05
   readout: mean
 
@@ -18,7 +19,7 @@ data_args:
   batch_size: 512
 
 # Training specific arguments/hyperparameters
-cuda: 3
+cuda: 2
 seed: 42
 train_args:
   runs: 3
