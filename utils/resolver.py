@@ -93,6 +93,8 @@ def model_and_data_resolver(model_query, dataset_query, **kwargs):
         model = models.DeeperGCN(**model_kwargs)
     elif model_query == 'EGC':
         model = models.EGC(**model_kwargs)
+    elif model_query == 'GraphSAGE' or model_query == 'SAGE':
+        model = models.GraphSAGE(**model_kwargs)
     elif model_query == 'GAT':
         model = models.GAT(**model_kwargs)
     elif model_query == 'GATv2':

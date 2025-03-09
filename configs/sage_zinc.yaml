@@ -1,0 +1,36 @@
+experiment_name: sage_zinc
+
+# Model specific arguments/hyperparameters
+model: GraphSAGE
+model_args:
+  hidden_channels: 256
+  out_channels: 256
+  num_layers: 4
+  num_pred_layers: 3
+  dropout: 0.05
+  readout: mean
+
+# Dataset specific arguments/hyperparameters
+dataset: ZINC
+data_args:
+  root: data/zinc/
+  batch_size: 512
+
+# Training specific arguments/hyperparameters
+cuda: 2
+seed: 42
+train_args:
+  runs: 3
+  epochs: 150
+  eval_interval: 10
+  loss_fn: L1Loss
+  optimizer: Adam
+  optimizer_kwargs:
+    lr: 6.5e-5
+    weight_decay: 3.0e-4
+  scheduler: ReduceLROnPlateau
+  scheduler_kwargs:
+    mode: min
+  evaluator: ZINCEvaluator
+checkpoint_dir: out/checkpoints/
+log_dir: out/logs/

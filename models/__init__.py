@@ -9,6 +9,7 @@ from .gcn import GCN
 from .gin import GIN
 from .gine import GINE
 from .pna import PNA
+from .sage import GraphSAGE
 
 __all__ = [
     'DeeperGCN',
@@ -16,6 +17,7 @@ __all__ = [
     'DNA',
     'EGC',
     'Encoder',
+    'GraphSAGE',
     'GAT',
     'GATv2',
     'GCN',
