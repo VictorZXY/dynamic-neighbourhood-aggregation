@@ -1,7 +1,7 @@
-experiment_name: dna_hiv
+experiment_name: ldna_mnist
 
 # Model specific arguments/hyperparameters
-model: DNA
+model: LDNA
 model_args:
   hidden_channels: 256
   out_channels: 256
@@ -13,19 +13,19 @@ model_args:
   readout: mean
 
 # Dataset specific arguments/hyperparameters
-dataset: ogbg-molhiv
+dataset: MNISTSuperpixels
 data_args:
-  root: data/
+  root: data/mnist/
   batch_size: 512
 
 # Training specific arguments/hyperparameters
 cuda: 1
 seed: 42
 train_args:
-  runs: 5
+  runs: 3
   epochs: 150
   eval_interval: 10
-  loss_fn: BCEWithLogitsLoss
+  loss_fn: CrossEntropyLoss
   optimizer: Adam
   optimizer_kwargs:
     lr: 6.5e-5
@@ -33,8 +33,6 @@ train_args:
   scheduler: ReduceLROnPlateau
   scheduler_kwargs:
     mode: max
-  evaluator: OGBGraphPropPredEvaluator
-  evaluator_kwargs:
-    name: ogbg-molhiv
+  evaluator: MNISTEvaluator
 checkpoint_dir: out/checkpoints/
 log_dir: out/logs/

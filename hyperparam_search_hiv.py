@@ -11,7 +11,7 @@ import models
 from utils import sort_graphs
 
 
-def train_DNA(
+def train_LDNA(
         trial: optuna.Trial,
         hidden_channels: int = 128,
         num_layers: int = 4,
@@ -33,7 +33,7 @@ def train_DNA(
     test_loader = DataLoader(dataset[split_idx['test']], batch_size=batch_size, shuffle=False)
 
     # ---- Instantiate model ----
-    model = models.DNA(
+    model = models.LDNA(
         in_channels=128,
         hidden_channels=hidden_channels,
         out_channels=hidden_channels,
@@ -103,7 +103,7 @@ def objective(trial: optuna.Trial) -> float:
     weight_decay = trial.suggest_float('weight_decay', 1e-6, 1e-3, log=True)
 
     # --- Train model with these hyperparameters ---
-    result = train_DNA(
+    result = train_LDNA(
         trial=trial,
         hidden_channels=hidden_channels,
         num_layers=num_layers,

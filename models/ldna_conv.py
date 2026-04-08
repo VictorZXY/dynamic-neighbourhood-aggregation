@@ -5,9 +5,9 @@ from torch_geometric.nn.models import MLP
 from torch_scatter import scatter
 
 
-class DNAConv(MessagePassing):
+class LDNAConv(MessagePassing):
     def __init__(self, in_channels, out_channels, edge_dim=None, num_pre_layers=1, num_post_layers=1, **kwargs):
-        super(DNAConv, self).__init__(aggr=None, **kwargs)
+        super(LDNAConv, self).__init__(aggr=None, **kwargs)
 
         self.in_channels = in_channels
         self.out_channels = out_channels

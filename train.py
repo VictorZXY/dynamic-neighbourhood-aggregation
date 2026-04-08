@@ -145,7 +145,7 @@ if __name__ == '__main__':
     parser.add_argument('--experiment_name', type=str, required=True)
 
     # Model specific arguments/hyperparameters
-    parser.add_argument('--model', default='DNA', type=str)
+    parser.add_argument('--model', default='LDNA', type=str)
     parser.add_argument('--model_args', default=None, type=yaml.safe_load)
 
     # Dataset specific arguments/hyperparameters

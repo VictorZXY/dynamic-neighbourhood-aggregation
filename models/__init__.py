@@ -1,6 +1,6 @@
 from .deepergcn import DeeperGCN
-from .dna_conv import DNAConv
-from .dna_net import DNA
+from .ldna_conv import LDNAConv
+from .ldna_net import LDNA
 from .egc import EGC
 from .encoder import Encoder
 from .gat import GAT
@@ -13,8 +13,8 @@ from .sage import GraphSAGE
 
 __all__ = [
     'DeeperGCN',
-    'DNAConv',
-    'DNA',
+    'LDNAConv',
+    'LDNA',
     'EGC',
     'Encoder',
     'GraphSAGE',

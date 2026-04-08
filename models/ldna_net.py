@@ -8,16 +8,16 @@ from torch_geometric.nn.pool import global_add_pool, global_max_pool, global_mea
 from torch_geometric.nn.resolver import activation_resolver
 from torch_geometric.utils import to_dense_batch
 
-from models import DNAConv
+from models import LDNAConv
 
 
-class DNA(nn.Module):
+class LDNA(nn.Module):
     def __init__(self, *,
                  channel_list=None, in_channels=None, hidden_channels=None, out_channels=None, num_layers=None,
                  edge_dim=None, node_encoder=None, edge_encoder=None, num_pre_layers=1, num_post_layers=1,
                  num_pred_heads=None, num_pred_layers=3, readout=None, dropout=0.0, batch_norm=True,
                  act='relu', act_first=False, act_kwargs=None, **kwargs):
-        super(DNA, self).__init__()
+        super(LDNA, self).__init__()
 
         if in_channels is not None:
             if num_layers is None:
@@ -37,7 +37,7 @@ class DNA(nn.Module):
         self.convs = nn.ModuleList()
         self.batch_norms = nn.ModuleList()
         for in_channels, out_channels in zip(channel_list[:-1], channel_list[1:]):
-            self.convs.append(DNAConv(in_channels=in_channels, out_channels=out_channels, edge_dim=edge_dim,
+            self.convs.append(LDNAConv(in_channels=in_channels, out_channels=out_channels, edge_dim=edge_dim,
                                       num_pre_layers=num_pre_layers, num_post_layers=num_post_layers, **kwargs))
             if batch_norm:
                 self.batch_norms.append(BatchNorm(out_channels))
