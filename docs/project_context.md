@@ -15,7 +15,7 @@
 - LDNA is not limited to graph-level prediction, and future evaluation is expected to include node datasets as well.
 
 ## Current Datasets
-- `ogbg-molhiv`: graph-level binary classification.
+- `ogbg-molhiv` and `ogbg-molpcba`: graph-level binary classification.
 - `ZINC`: graph-level regression.
 - `MNISTSuperpixels`: graph-level multi-class classification.
 

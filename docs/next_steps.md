@@ -2,15 +2,18 @@
 
 ## Right now
 
-- Add any additional `ogbg-molpcba` experiment configs only if explicitly needed.
-- Reuse the existing dataset support in `utils/resolver.py` and `train.py` rather than introducing new code unless a concrete issue appears.
+Merge `hyperparam_search_hiv.py` and `hyperparam_search_zinc.py` into a generic `hyperparam_search.py`:
+
+- Include the dataset name as an argument for `train_LDNA`. You may feel free to reuse existing code such as 
+  `utils.resolver.model_and_data_resolver(model_query='LDNA')`.
+- Prefer minimal changes with clean code.
+- Avoid broad refactors.
 
 ---
 
 ## High priority
 
 - Expand `README.md` to include the project description, setup and usage.
-- Add environment and dependency documentation.
 
 ---
 

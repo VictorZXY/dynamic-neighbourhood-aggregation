@@ -27,10 +27,9 @@
 
 ## Future milestones
 - Expand `README.md` so the repository.
-- Add environment and dependency documentation.
 - Add more baseline models for experiments.
 - Add more node/graph datasets for experiments.
-- Reproduce graph transformers 
+- Add graph transformers implements and run them on the benchmark datasets.
 
 ---
 
