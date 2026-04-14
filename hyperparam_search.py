@@ -8,7 +8,7 @@ from torch import nn
 from utils import evaluator_resolver, loss_resolver, model_and_data_resolver
 
 
-def get_study_settings(dataset: str) -> dict:
+def _get_study_settings(dataset: str) -> dict:
     if dataset == 'ogbg-molhiv':
         # direction='maximize' because we want to maximize ROC-AUC
         return {
@@ -202,7 +202,7 @@ def objective(trial, dataset: str, epochs: int = 50, device: str = 'cuda:0') -> 
 
 
 def main(args):
-    settings = get_study_settings(args.dataset)
+    settings = _get_study_settings(args.dataset)
 
     # Create a study object
     study = optuna.create_study(
