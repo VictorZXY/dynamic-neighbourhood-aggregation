@@ -36,9 +36,10 @@ def model_and_data_resolver(model_query, dataset_query, **kwargs):
         val_dataset = test_dataset = sort_graphs(test_dataset, sort_y=False)
     elif dataset_query == 'ZINC':
         transform = UnsqueezeTargetDim()
-        train_dataset = ZINC(subset=False, split='train', pre_transform=transform, **dataset_kwargs)
-        val_dataset = ZINC(subset=False, split='val', pre_transform=transform, **dataset_kwargs)
-        test_dataset = ZINC(subset=False, split='test', pre_transform=transform, **dataset_kwargs)
+        subset = dataset_kwargs.pop('subset', False)
+        train_dataset = ZINC(subset=subset, split='train', pre_transform=transform, **dataset_kwargs)
+        val_dataset = ZINC(subset=subset, split='val', pre_transform=transform, **dataset_kwargs)
+        test_dataset = ZINC(subset=subset, split='test', pre_transform=transform, **dataset_kwargs)
         
         train_dataset = sort_graphs(train_dataset, sort_y=False)
         val_dataset = sort_graphs(val_dataset, sort_y=False)

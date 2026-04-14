@@ -12,7 +12,7 @@
 - LDNA model implementation is present in `models/ldna_conv.py` and `models/ldna_net.py`.
 - Baseline GNN model wrappers are present in `models/`.
 - Dataset preprocessing, sorting, evaluators, logger, and resolver code are present in `utils/`.
-- Optuna search scripts are present for MolHIV and ZINC.
+- A generic Optuna search script is present for MolHIV, MolPCBA, and ZINC.
 - The repository is usable as an experiment runner.
 - The repository is not documented as a packaged project.
 - The current repository contents are centered on graph-level experiments.

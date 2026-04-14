@@ -6,7 +6,9 @@
 - This repository is centered on running experiments rather than packaging a reusable library.
 
 ## Project Scope
+- This project is run in a Conda environment `LDNA`.
 - The main training entry point is `train.py`.
+- All unittests are stored in `local_tests/`.
 - Experiments are configured through YAML files in `configs/`.
 - `utils/resolver.py` loads datasets, applies preprocessing, and builds the requested model.
 - Sorting is performed in `utils/_utils.py` and applied during dataset preparation from `utils/resolver.py`.
